@@ -1,134 +1,147 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { Plugin } from 'obsidian';
 
-// Remember to rename these classes and interfaces!
+const AR_LETTERS: Record<string, string> = {
+	// Shadda
+	Shadda: "\u{0651}",
 
-interface MyPluginSettings {
-	mySetting: string;
+	// Short vowels
+	Sukoon: "\u{0652}",
+	Damma: "\u{064F}",
+	Fatha: "\u{064E}",
+	Kasra: "\u{0650}",
+	Dammatan: "\u{064C}",
+	Fathatan: "\u{064B}",
+	Kasratan: "\u{064D}",
+
+	// Misc
+	Placeholder: "\u{25CC}",
+	SuperscriptAlef: "\u{670}",
+
+	// Punctuation
+	ArabicQuestionMark: "\u{61F}",
+	LeftAngleQuotationMark: "\u{00AB}",
+	RightAngleQuotationMark: "\u{00BB}",
+	Period: '.',
+	Colon: ':',
+	QuotationMark: '"',
+	ArabicComma: "\u{060C}",
+	EmDash: '—',
+
+	// Letters
+	Hamza: "\u{0621}",
+	AlefWithMadda: "\u{0622}",
+	AlefWithHamzaAbove: "\u{0623}",
+	WawWithHamza: "\u{0624}",
+	AlefWithHamzaBelow: "\u{0625}",
+	YehWithHamzaAbove: "\u{0626}",
+	Alef: "\u{0627}",
+	Beh: "\u{0628}",
+	TehMarbuta: "\u{0629}",
+	Teh: "\u{062A}",
+	Theh: "\u{062B}",
+	Jeem: "\u{062C}",
+	Hah: "\u{062D}",
+	Khah: "\u{062E}",
+	Dal: "\u{062F}",
+	Thal: "\u{0630}",
+	Reh: "\u{0631}",
+	Zain: "\u{0632}",
+	Seen: "\u{0633}",
+	Sheen: "\u{0634}",
+	Sad: "\u{0635}",
+	Dad: "\u{0636}",
+	Tah: "\u{0637}",
+	Zah: "\u{0638}",
+	Ain: "\u{0639}",
+	Ghain: "\u{063A}",
+	Feh: "\u{0641}",
+	Qaf: "\u{0642}",
+	Kaf: "\u{0643}",
+	Lam: "\u{0644}",
+	Meem: "\u{0645}",
+	Noon: "\u{0646}",
+	Heh: "\u{0647}",
+	Waw: "\u{0648}",
+	AlefMaksura: "\u{0649}",
+	Yeh: "\u{064A}",
+	AlefWaslah: "\u{0671}",
+
+	Tatweel: "\u{0640}",
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+const BUCKWALTER: Record<string, string> = {
+	'A': AR_LETTERS.Alef,
+	'|': AR_LETTERS.AlefWithMadda,
+	'{': AR_LETTERS.AlefWaslah,
+	'`': AR_LETTERS.SuperscriptAlef,
+	'b': AR_LETTERS.Beh,
+	'p': AR_LETTERS.TehMarbuta,
+	't': AR_LETTERS.Teh,
+	'v': AR_LETTERS.Theh,
+	'j': AR_LETTERS.Jeem,
+	'H': AR_LETTERS.Hah,
+	'x': AR_LETTERS.Khah,
+	'd': AR_LETTERS.Dal,
+	'*': AR_LETTERS.Thal,
+	'r': AR_LETTERS.Reh,
+	'z': AR_LETTERS.Zain,
+	's': AR_LETTERS.Seen,
+	'$': AR_LETTERS.Sheen,
+	'S': AR_LETTERS.Sad,
+	'D': AR_LETTERS.Dad,
+	'T': AR_LETTERS.Tah,
+	'Z': AR_LETTERS.Zah,
+	'E': AR_LETTERS.Ain,
+	'g': AR_LETTERS.Ghain,
+	'f': AR_LETTERS.Feh,
+	'q': AR_LETTERS.Qaf,
+	'k': AR_LETTERS.Kaf,
+	'l': AR_LETTERS.Lam,
+	'm': AR_LETTERS.Meem,
+	'n': AR_LETTERS.Noon,
+	'h': AR_LETTERS.Heh,
+	'w': AR_LETTERS.Waw,
+	'Y': AR_LETTERS.AlefMaksura,
+	'y': AR_LETTERS.Yeh,
+	'F': AR_LETTERS.Fathatan,
+	'N': AR_LETTERS.Dammatan,
+	'K': AR_LETTERS.Kasratan,
+	'a': AR_LETTERS.Fatha,
+	'u': AR_LETTERS.Damma,
+	'i': AR_LETTERS.Kasra,
+	'~': AR_LETTERS.Shadda,
+	'o': AR_LETTERS.Sukoon,
+	'\'': AR_LETTERS.Hamza,
+	'>': AR_LETTERS.AlefWithHamzaAbove,
+	'<': AR_LETTERS.AlefWithHamzaBelow,
+	'}': AR_LETTERS.YehWithHamzaAbove,
+	'&': AR_LETTERS.WawWithHamza,
+	'_': AR_LETTERS.Tatweel,
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
-
+export default class BuckwalterPlugin extends Plugin {
 	async onload() {
-		await this.loadSettings();
+		this.registerMarkdownPostProcessor((element, context) => {
+			const pars = element.findAll("p")
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
+			for (let par of pars) {
+				const text = par.innerText
+				const re = /b\/.+\//g
+				const arEl = par.createEl("p", {
+					text: text.replaceAll(re, this.toBuckwalter),
+				})
+				par.replaceWith(arEl)
 			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		})
 	}
 
-	onunload() {
-
-	}
-
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
+	private toBuckwalter(str : String) {
+		let res = ""
+		str = str.substring(2, str.length - 1)
+		for (let c of str) {
+			res += BUCKWALTER[c] ?? c
+		}
+		return res
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
-}
