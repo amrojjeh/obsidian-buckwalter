@@ -122,11 +122,18 @@ const BUCKWALTER: Record<string, string> = {
 export default class BuckwalterPlugin extends Plugin {
 	async onload() {
 		this.registerMarkdownPostProcessor((element, _context) => {
-			const elements = element.findAll("p, a, th, td, li")
+			const codes = element.findAll("code")
+			const links = element.findAll("a.internal-link")
 
-			for (let el of elements) {
-				const textNodes = Array.from(el.childNodes).filter(x => x instanceof Text)
-				textNodes.forEach(x => el.replaceChild(el.createSpan({
+			for (let code of codes) {
+				code.replaceWith(code.createSpan({
+					text: this.buckwalterProccesser(code.innerText)
+				}))
+			}
+
+			for (let link of links) {
+				const textNodes = Array.from(link.childNodes).filter(x => x instanceof Text)
+				textNodes.forEach(x => link.replaceChild(link.createSpan({
 					text: this.buckwalterProccesser(x.textContent)
 				}), x))
 			}
@@ -137,12 +144,15 @@ export default class BuckwalterPlugin extends Plugin {
 		if (str == null) {
 			return ""
 		}
-		const re = /b\/.+?\//g
-		return str.replaceAll(re, this.toBuckwalter)
+		if (str.startsWith("b/")) {
+			return this.toBuckwalter(str)
+		} else {
+			return str
+		}
 	}
 
 	private toBuckwalter(str: string): string {
-		str = str.substring(2, str.length - 1)
+		str = str.substring(2)
 		let res = ""
 		for (let c of str) {
 			res += BUCKWALTER[c] ?? c
