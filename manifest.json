@@ -3,7 +3,7 @@
 	"name": "Buckwalter Transliteration",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Renders buckwalter text in Arabic",
+	"description": "Renders Arabic using Buckwalter's encoding scheme. It does not work with live preview. Syntax: 'b/Asmy Emrw/'.",
 	"author": "Amr Ojjeh",
 	"authorUrl": "https://github.com/amrojjeh",
 	"isDesktopOnly": false
