@@ -122,7 +122,7 @@ const BUCKWALTER: Record<string, string> = {
 export default class BuckwalterPlugin extends Plugin {
 	async onload() {
 		this.registerMarkdownPostProcessor((element, _context) => {
-			const elements = element.findAll("p").concat(element.findAll("a"))
+			const elements = element.findAll("p, a, th, td")
 
 			for (let el of elements) {
 				const textNodes = Array.from(el.childNodes).filter(x => x instanceof Text)
