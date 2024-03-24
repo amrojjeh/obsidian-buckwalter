@@ -121,23 +121,29 @@ const BUCKWALTER: Record<string, string> = {
 
 export default class BuckwalterPlugin extends Plugin {
 	async onload() {
-		this.registerMarkdownPostProcessor((element, context) => {
-			const pars = element.findAll("p")
+		this.registerMarkdownPostProcessor((element, _context) => {
+			const elements = element.findAll("p").concat(element.findAll("a"))
 
-			for (let par of pars) {
-				const text = par.innerText
-				const re = /b\/.+\//g
-				const arEl = par.createEl("p", {
-					text: text.replaceAll(re, this.toBuckwalter),
-				})
-				par.replaceWith(arEl)
+			for (let el of elements) {
+				const textNodes = Array.from(el.childNodes).filter(x => x instanceof Text)
+				textNodes.forEach(x => el.replaceChild(el.createSpan({
+					text: this.buckwalterProccesser(x.textContent)
+				}), x))
 			}
 		})
 	}
 
-	private toBuckwalter(str : String) {
-		let res = ""
+	private buckwalterProccesser(str: string | null): string {
+		if (str == null) {
+			return ""
+		}
+		const re = /b\/.+?\//g
+		return str.replaceAll(re, this.toBuckwalter)
+	}
+
+	private toBuckwalter(str: string): string {
 		str = str.substring(2, str.length - 1)
+		let res = ""
 		for (let c of str) {
 			res += BUCKWALTER[c] ?? c
 		}
