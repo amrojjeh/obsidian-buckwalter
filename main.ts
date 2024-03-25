@@ -117,6 +117,8 @@ const BUCKWALTER: Record<string, string> = {
 	'}': AR_LETTERS.YehWithHamzaAbove,
 	'&': AR_LETTERS.WawWithHamza,
 	'_': AR_LETTERS.Tatweel,
+
+	',': AR_LETTERS.ArabicComma,
 }
 
 export default class BuckwalterPlugin extends Plugin {
