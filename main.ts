@@ -1,4 +1,4 @@
-import { Plugin } from 'obsidian';
+import { MarkdownPostProcessorContext, Plugin } from 'obsidian';
 
 const AR_LETTERS: Record<string, string> = {
 	// Shadda
@@ -123,38 +123,33 @@ const BUCKWALTER: Record<string, string> = {
 
 export default class BuckwalterPlugin extends Plugin {
 	async onload() {
-		this.registerMarkdownPostProcessor((element, _context) => {
+		this.registerMarkdownPostProcessor(this.markdownPostProcessor.bind(this))
+	}
+
+	private markdownPostProcessor(element: HTMLElement, _context: MarkdownPostProcessorContext) {
 			const codes = element.findAll("code")
 			const links = element.findAll("a.internal-link")
 
-			for (let code of codes) {
-				code.replaceWith(code.createSpan({
-					text: this.buckwalterProccesser(code.innerText)
-				}))
-			}
-
-			for (let link of links) {
-				const textNodes = Array.from(link.childNodes).filter(x => x instanceof Text)
-				textNodes.forEach(x => link.replaceChild(link.createSpan({
-					text: this.buckwalterProccesser(x.textContent)
-				}), x))
-			}
-		})
+			codes.forEach(this.codeProcessor.bind(this))
+			links.forEach(this.linkProcessor.bind(this))
+		
 	}
 
-	private buckwalterProccesser(str: string | null): string {
-		if (str == null) {
-			return ""
+	private codeProcessor(el: HTMLElement): void {
+		if (el.innerText.startsWith("b/")) {
+			el.replaceWith(el.createSpan({
+				text: this.toBuckwalter(el.innerText.substring(2))
+			}))
 		}
-		if (str.startsWith("b/")) {
-			return this.toBuckwalter(str)
-		} else {
-			return str
+	}
+
+	private linkProcessor(el: HTMLElement): void {
+		if (el.innerText.startsWith("b/")) {
+			el.innerText = this.toBuckwalter(el.innerText.substring(2))
 		}
 	}
 
 	private toBuckwalter(str: string): string {
-		str = str.substring(2)
 		let res = ""
 		for (let c of str) {
 			res += BUCKWALTER[c] ?? c
